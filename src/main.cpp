@@ -1,59 +1,24 @@
-//! Line follower robot for ESP32: TB6612FNG motor driver, TCA9548A I2C mux, dual TCS34725 color sensors.
+//! Line follower robot for ESP32: TB6612FNG motor driver, dual TCS34725 color sensors.
 
 #include <Arduino.h>
 #include <Wire.h>
 #include <Adafruit_TCS34725.h>
 
-// -------------------- Motor --------------------
+// -------------------- Pin definitions --------------------
 
-class Motor {
-  public:
-    Motor(int in1, int in2, int pwm, int offset)
-      : in1_(in1), in2_(in2), pwm_(pwm), offset_(offset) {
-      pinMode(in1_, OUTPUT);
-      pinMode(in2_, OUTPUT);
-      pinMode(pwm_, OUTPUT);
-    }
+#define MTR_R_PWM 26
+#define MTR_R_BWD 25
+#define MTR_R_FWD 33
 
-    void drive(int speed) {
-      speed = constrain(speed, -255, 255) * offset_;
-      digitalWrite(in1_, speed < 0);
-      digitalWrite(in2_, speed >= 0);
-      analogWrite(pwm_, abs(speed));
-    }
+#define MTR_L_PWM 34
+#define MTR_L_FWD 35
+#define MTR_L_BWD 32
 
-    void brake() {
-      digitalWrite(in1_, HIGH);
-      digitalWrite(in2_, HIGH);
-      analogWrite(pwm_, 0);
-    }
+#define CLR_L_SDA 16
+#define CLR_L_SCL 21
 
-  private:
-    int in1_, in2_, pwm_, offset_;
-};
-
-// -------------------- TB6612FNG pin map --------------------
-
-#define AIN1 12
-#define BIN1 9
-#define AIN2 13
-#define BIN2 8
-#define PWMA 10
-#define PWMB 11
-
-const int offsetA = -1;
-const int offsetB = 1;
-
-Motor left_motor(AIN1, AIN2, PWMA, offsetA);
-Motor right_motor(BIN1, BIN2, PWMB, offsetB);
-
-// -------------------- TCA9548A mux + TCS34725 --------------------
-
-#define TCA_ADDR 0x70
-const uint8_t LEFT_SENSOR_CHANNEL = 3;
-const uint8_t RIGHT_SENSOR_CHANNEL = 0;
-
-Adafruit_TCS34725 tcs(TCS34725_INTEGRATIONTIME_24MS, TCS34725_GAIN_4X);
+#define CLR_R_SDA 14
+#define CLR_R_SCL 12
 
 // -------------------- Tuning --------------------
 
@@ -62,56 +27,65 @@ const int BASE = 150;
 const int TURN = 200;
 const int loopDelayMs = 20;
 
-// -------------------- Helpers --------------------
+// -------------------- Motors --------------------
 
-void tcaSelect(uint8_t channel) {
-  if (channel > 7) return;
-  Wire.beginTransmission(TCA_ADDR);
-  Wire.write(1 << channel);
-  Wire.endTransmission();
+// Left motor is physically inverted, so speed is negated before driving.
+void driveLeft(int speed) {
+  int s = constrain(-speed, -255, 255);
+  digitalWrite(MTR_L_FWD, s < 0);
+  digitalWrite(MTR_L_BWD, s >= 0);
+  analogWrite(MTR_L_PWM, abs(s));
 }
 
-bool initSensor(uint8_t channel) {
-  tcaSelect(channel);
-  delay(10);
-  return tcs.begin();
-}
-
-uint16_t readClear(uint8_t channel) {
-  uint16_t r, g, b, c;
-  tcaSelect(channel);
-  delay(2);
-  tcs.getRawData(&r, &g, &b, &c);
-  return c;
+void driveRight(int speed) {
+  int s = constrain(speed, -255, 255);
+  digitalWrite(MTR_R_FWD, s < 0);
+  digitalWrite(MTR_R_BWD, s >= 0);
+  analogWrite(MTR_R_PWM, abs(s));
 }
 
 void driveMotors(int leftSpeed, int rightSpeed) {
-  left_motor.drive(leftSpeed);
-  right_motor.drive(rightSpeed);
+  driveLeft(leftSpeed);
+  driveRight(rightSpeed);
 }
 
 void stopMotors() {
-  left_motor.brake();
-  right_motor.brake();
+  digitalWrite(MTR_L_FWD, HIGH); digitalWrite(MTR_L_BWD, HIGH); analogWrite(MTR_L_PWM, 0);
+  digitalWrite(MTR_R_FWD, HIGH); digitalWrite(MTR_R_BWD, HIGH); analogWrite(MTR_R_PWM, 0);
+}
+
+// -------------------- TCS34725 sensors --------------------
+
+TwoWire WireLeft(0);
+TwoWire WireRight(1);
+
+Adafruit_TCS34725 tcsLeft(TCS34725_INTEGRATIONTIME_24MS, TCS34725_GAIN_4X);
+Adafruit_TCS34725 tcsRight(TCS34725_INTEGRATIONTIME_24MS, TCS34725_GAIN_4X);
+
+uint16_t readClear(Adafruit_TCS34725 &sensor) {
+  uint16_t r, g, b, c;
+  sensor.getRawData(&r, &g, &b, &c);
+  return c;
 }
 
 // -------------------- Setup --------------------
 
 void setup() {
   Serial.begin(115200);
-  Wire.begin();
+
+  pinMode(MTR_L_FWD, OUTPUT); pinMode(MTR_L_BWD, OUTPUT); pinMode(MTR_L_PWM, OUTPUT);
+  pinMode(MTR_R_FWD, OUTPUT); pinMode(MTR_R_BWD, OUTPUT); pinMode(MTR_R_PWM, OUTPUT);
   stopMotors();
 
-  bool leftOk = initSensor(LEFT_SENSOR_CHANNEL);
-  bool rightOk = initSensor(RIGHT_SENSOR_CHANNEL);
+  WireLeft.begin(CLR_L_SDA, CLR_L_SCL);
+  WireRight.begin(CLR_R_SDA, CLR_R_SCL);
+  bool leftOk  = tcsLeft.begin(TCS34725_ADDRESS, &WireLeft);
+  bool rightOk = tcsRight.begin(TCS34725_ADDRESS, &WireRight);
   Serial.printf("Left Sensor: %s\n", leftOk ? "OK" : "FAIL");
   Serial.printf("Right Sensor: %s\n", rightOk ? "OK" : "FAIL");
 
   if (!leftOk || !rightOk) {
-    while (1) {
-      stopMotors();
-      delay(100);
-    }
+    while (1) delay(100);
   }
 
   Serial.println("Line follower ready.");
@@ -121,10 +95,10 @@ void setup() {
 // -------------------- Loop --------------------
 
 void loop() {
-  uint16_t clear1 = readClear(LEFT_SENSOR_CHANNEL);
-  uint16_t clear2 = readClear(RIGHT_SENSOR_CHANNEL);
+  uint16_t clear1 = readClear(tcsLeft);
+  uint16_t clear2 = readClear(tcsRight);
 
-  bool leftOnLine = clear1 < LINE_THRESHOLD;
+  bool leftOnLine  = clear1 < LINE_THRESHOLD;
   bool rightOnLine = clear2 < LINE_THRESHOLD;
 
   if (leftOnLine == rightOnLine) driveMotors(BASE, BASE);   // both or neither
