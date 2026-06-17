@@ -6,19 +6,19 @@
 
 // -------------------- Pin definitions --------------------
 
-#define MTR_R_PWM 26
-#define MTR_R_BWD 25
+
+#define MTR_R_PWM 32
 #define MTR_R_FWD 33
+#define MTR_R_BWD 25
+#define MTR_L_FWD 26
+#define MTR_L_BWD 27
+#define MTR_L_PWM 14
 
-#define MTR_L_PWM 34
-#define MTR_L_FWD 35
-#define MTR_L_BWD 32
+#define CLR_L_SDA 18
+#define CLR_L_SCL 5
 
-#define CLR_L_SDA 16
-#define CLR_L_SCL 21
-
-#define CLR_R_SDA 14
-#define CLR_R_SCL 12
+#define CLR_R_SDA 17
+#define CLR_R_SCL 16
 
 // -------------------- Tuning --------------------
 
@@ -95,17 +95,17 @@ void setup() {
 // -------------------- Loop --------------------
 
 void loop() {
-  uint16_t clear1 = readClear(tcsLeft);
-  uint16_t clear2 = readClear(tcsRight);
+  uint16_t clear_l = readClear(tcsLeft);
+  uint16_t clear_r = readClear(tcsRight);
 
-  bool leftOnLine  = clear1 < LINE_THRESHOLD;
-  bool rightOnLine = clear2 < LINE_THRESHOLD;
+  bool leftOnLine  = clear_l < LINE_THRESHOLD;
+  bool rightOnLine = clear_r < LINE_THRESHOLD;
 
   if (leftOnLine == rightOnLine) driveMotors(BASE, BASE);   // both or neither
   else if (leftOnLine)           driveMotors(-TURN, BASE);  // turn left
   else                           driveMotors(BASE, -TURN);  // turn right
 
-  Serial.printf("C1:%u C2:%u L:%d R:%d\n", clear1, clear2, leftOnLine, rightOnLine);
+  Serial.printf("CL:%u CR:%u L:%d R:%d\n", clear_l, clear_r, leftOnLine, rightOnLine);
 
   delay(loopDelayMs);
 }
