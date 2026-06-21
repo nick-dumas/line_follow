@@ -26,14 +26,16 @@ MotorPins MOTOR_L = {26, 27, 14};
 TwoWire I2C_L(0);
 TwoWire I2C_R(1);
   
-Adafruit_TCS34725 TCS_L(TCS34725_INTEGRATIONTIME_24MS, TCS34725_GAIN_4X);
-Adafruit_TCS34725 TCS_R(TCS34725_INTEGRATIONTIME_24MS, TCS34725_GAIN_4X);
+Adafruit_TCS34725 TCS_L(TCS34725_INTEGRATIONTIME_2_4MS, TCS34725_GAIN_16X);
+Adafruit_TCS34725 TCS_R(TCS34725_INTEGRATIONTIME_2_4MS, TCS34725_GAIN_16X);
 
 // -------------------- Tuning --------------------
 
-const uint16_t LINE_THRESHOLD = 1000;
+const uint16_t LINE_THRESHOLD = 150;
 const int BASE = 150;
-const int TURN = 200;
+const int TURN1 = -150;
+const int TURN2 = 50;
+const int TURN_DELAY_MS = 50;
 
 // -------------------- Functions --------------------
 
@@ -87,32 +89,59 @@ void setup() {
 // -------------------- Loop --------------------
 
 void loop() {
+  static uint32_t lastLoopUs = 0;
+  static uint32_t maxLatencyUs = 0;
+  static uint32_t sumLatencyUs = 0;
+  static uint32_t loopCount = 0;
+  uint32_t loopStartUs = micros();
+  if (lastLoopUs) {
+    uint32_t dt = loopStartUs - lastLoopUs;
+    if (dt > maxLatencyUs) maxLatencyUs = dt;
+    sumLatencyUs += dt;
+    loopCount++;
+  }
+  lastLoopUs = loopStartUs;
+
   uint16_t clear_l = readClear(TCS_L);
   uint16_t clear_r = readClear(TCS_R);
 
   bool leftOnLine  = clear_l < LINE_THRESHOLD;
   bool rightOnLine = clear_r < LINE_THRESHOLD;
 
-  if (leftOnLine == rightOnLine) driveMotors(BASE, BASE);   // both or neither
-  else if (leftOnLine)           driveMotors(-TURN, BASE);  // turn left
-  else                           driveMotors(BASE, -TURN);  // turn right
+  const char* dir = "";
+
+  if (leftOnLine == rightOnLine) {
+    dir = "F";
+    driveMotors(BASE, BASE);
+  } else if (leftOnLine) {
+    dir = "L";
+    driveMotors(TURN1, TURN2);
+    delay(TURN_DELAY_MS);
+  } else {
+    dir = "R";
+    driveMotors(TURN2, TURN1);
+    delay(TURN_DELAY_MS);
+  }
 
   static uint32_t lastPrint = 0;
   uint32_t now = millis();
-  bool print_required = false;
   if (now - lastPrint >= 1000) {
-    print_required = true;
     lastPrint = now;
+    float avgMs = loopCount ? (sumLatencyUs / 1000.0f) / loopCount : 0.0f;
+    float maxMs = maxLatencyUs / 1000.0f;
+    Serial.printf("T:%8u\tavg:%6.2fms\tmax:%6.2fms\tCL:%5u\tCR:%5u\tDIR:%s\n",
+                  now, avgMs, maxMs, clear_l, clear_r, dir);
+    maxLatencyUs = 0;
+    sumLatencyUs = 0;
+    loopCount = 0;
   }
 
   static bool lastLeftOnLine = false;
   static bool lastRightOnLine = false;
   if (leftOnLine != lastLeftOnLine || rightOnLine != lastRightOnLine) {
-    print_required = true;
+    Serial.printf("T:%8u\tCL:%5u\tCR:%5u\tL:%d\tR:%d\tDIR:%s\n",
+                  now, clear_l, clear_r, leftOnLine, rightOnLine, dir);
     lastLeftOnLine = leftOnLine;
     lastRightOnLine = rightOnLine;
-  }
-  if (print_required) {
-    Serial.printf("T:%8u  CL:%5u  CR:%5u  L:%d  R:%d\n", now, clear_l, clear_r, leftOnLine, rightOnLine);
   }
 }
