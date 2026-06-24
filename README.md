@@ -10,6 +10,7 @@ A two-sensor line-following robot for the ESP32, built with [PlatformIO](https:/
 | TB6612FNG | Dual DC motor driver |
 | TCA9548A | I²C multiplexer (lets two identical sensors share one bus) |
 | 2 × TCS34725 | RGB/clear color sensors (left & right) |
+| HC-SR04 | Ultrasonic distance sensor (pre-start telemetry) |
 
 ### Pin map (TB6612FNG)
 
@@ -26,6 +27,15 @@ Both TCS34725 sensors sit behind the TCA9548A at address `0x70`:
 
 - Left sensor  → mux channel **3**
 - Right sensor → mux channel **0**
+
+### HC-SR04 pin map
+
+| Signal | GPIO |
+|--------|------|
+| TRIG   | 2    |
+| ECHO   | 4    |
+
+Wire TRIG → GPIO 2, ECHO → GPIO 4, VCC → 5 V, GND → GND.
 
 ## How it works
 
@@ -53,13 +63,24 @@ pio run --target upload # flash over USB
 pio device monitor     # serial console @ 115200
 ```
 
-On boot the monitor prints sensor init status, then a per-loop telemetry line:
+On boot the monitor prints sensor init status. **Before the start button (GPIO 0) is pressed**,
+a status block prints once per second:
+
+```
+Left:
+R:  842 G:  901 B:  800 C:  900, !BLK, !GRN
+Right:
+R: 1400 G: 1500 B: 1300 C: 1503, !BLK, !GRN
+DIST: 23.4 cm
+```
+
+If the HC-SR04 echo times out (nothing in range / sensor absent) it prints `DIST: timeout`.
+
+After the button is pressed, per-loop telemetry resumes:
 
 ```
 C1:842 C2:1503 L:1 R:0
 ```
-
-(`C1`/`C2` = clear readings, `L`/`R` = on-line flags.)
 
 ## Notes
 
