@@ -1,51 +1,123 @@
-# Robocup Rescue robot
+# RoboCup Rescue Robot
 
-A two-sensor line-following robot for the ESP32, built with [PlatformIO](https://platformio.org/).
+A two-sensor line-following robot with an ESP32 for [RoboCup Rescue Australia Junior](https://www.robocupjunior.org.au/wp-content/uploads/2026/02/RCJA-Rescue-Line-Rules-2026.pdf). This is intended to guide learning, the functionality is intentionally incomplete.
 
 ## Hardware
 
 - ESP32 DevKit (WROOM-32)
-- TB6612FNG Motor Driver
-- Breadboard
-- Hookup Wire
-- 2× TCS34725 RGB Sensor
-- 2× TT Motor (220:1) + Wheel
-- HC-SR04 Ultrasonic Distance Sensor
+- TB6612FNG motor driver
+- 2× TCS34725 RGB colour sensor
+- 2× TT motor (220:1) + wheel
+- HC-SR04 ultrasonic distance sensor
+- Caster ball
+- 4×AA battery holder with switch
+- Breadboard and 22 AWG hookup wire
+
+## Wiring
+
+| Peripheral            | ESP32 pins                          |
+| --------------------- | ----------------------------------- |
+| Right motor (TB6612)  | FWD 25, BWD 33, PWM 32              |
+| Left motor (TB6612)   | FWD 26, BWD 27, PWM 14              |
+| Left colour sensor    | I2C bus 0 - SDA 18, SCL 5          |
+| Right colour sensor   | I2C bus 1 - SDA 17, SCL 16         |
+| Ultrasonic (HC-SR04)  | TRIG 2, ECHO 4                      |
+| Start button          | GPIO 0 (on-board BOOT button)      |
+
+## Getting Started
+
+I used visual studio code with PlatformIO, but the code can also run with the Arduino IDE.
+
+1. **Install Visual Studio Code** — download from
+   [code.visualstudio.com](https://code.visualstudio.com/) and run the installer.
+
+2. **Install the PlatformIO IDE extension** — in VS Code open the Extensions panel
+   (`Ctrl+Shift+X`), search for *PlatformIO IDE*, and click Install. It bundles
+   PlatformIO Core and the toolchains, so no separate Python or compiler setup is
+   needed. Wait for the one-time install to finish and reload when prompted.
+
+3. **USB-to-serial driver**
+   - **Windows** — open Device Manager and look under *Ports (COM & LPT)* for an
+     entry like `Silicon Labs CP210x ... (COM3)` or `USB-SERIAL CH340 (COM5)`. A
+     device under *Other devices* with a yellow warning triangle means the driver
+     is missing, and will need to be installed
+   - **macOS / Linux** - Should work by default
+
+4. **Open the project** — clone or download this repository, then in VS Code choose
+   *File → Open Folder* and select the `line_follow_esp32` folder. PlatformIO reads
+   [platformio.ini](platformio.ini) and downloads the ESP32 platform and the
+   Adafruit TCS34725 library automatically on the first build.
+
+5. **Connect the ESP32** over USB and use the PlatformIO toolbar at the bottom of
+   VS Code, or the terminal:
+
+   ```sh
+   pio run                 # compile
+   pio run --target upload # flash over USB
+   pio device monitor      # serial monitor @ 115200 baud
+   ```
+
+## Behaviour
+
+On startup, print sensor information until button pressed. Then, obot moves forward until one sensor sees black. The robot will turns towards the black to keep straddling the line. When green shortcut is detected, it will make a turn in that direction. If both sensors see green, it will halt.
 
 ## Tips
 
 ### Microcontroller
 
-Microcontrollers all have different capabilities. You want to check your chosen microcontroller has enough pins to support your requirements. In most microcontrollers, not all pins have the same capabilities. You'll need to check that you have enough regular GPIO pins, enough I2C pins, enough PWM pins, and enough analog input pins for your peripherals. Some pins will also be reused internally by the board for boot settings, buttons, leds, etc and should be avoided to maintain functionality. I used the ESP32 because it has lots of pins, multiple I2C buses, fits onto a breadboard, has wifi & bluetooth, has USBC, and is cheap.
+Microcontrollers differ in their capabilities, so check that your chosen board has
+enough pins of the right type for your peripherals: regular GPIO, I2C, PWM, and
+analog input. Some pins are reserved for internal purposes, boot settings, buttons, LEDs which should be avoided. I chose the ESP32 because it has plenty of pins, multiple I2C buses, fits
+a breadboard, includes WiFi and Bluetooth, has USB-C, and is cheap. The microbit is another compelling option which includes a speaker, LED matrix, microphone, accelerometer, bluetooth, visual programming, and buttons but only had 1 I2C and less GPIO pins.
 
 ### I2C
 
-I2C is a bus protocol that allows multiple devices and complex functionality to work with only an SDA pin, CLK pin, VCC and GND. However, most microcontrollers only support a single I2C bus with fixed pins. You can't connect multiple devices with the same address to the same bus. This usually causes problems with trying to connect multiple color sensors. Here's your options:
-- Sensors with configurable address (eg OPT4048)
-- I2C Multiplexer (eg TCA9548A)
-- Microcontroller with multiple I2C buses (eg ESP32)
+I2C is a bus protocol that drives multiple devices over SDA, SCL, VCC, and GND.
+However, most microcontrollers expose a single I2C bus on fixed pins, and you can't
+put two devices with the same address on one bus. This causes problems when connecting
+multiple colour sensors. Your options:
+
+- Sensors with a configurable address (e.g. OPT4048)
+- An I2C multiplexer (e.g. TCA9548A)
+- A microcontroller with multiple I2C buses (e.g. ESP32)
 - Multiple microcontrollers ☹️
 
-### Motor
+### Motors
 
-TT motors have a different speed ranges depending on the gear ratio. The most common gear ratio is 50:1, which usually operates too fast for a line following robot. Use the minimum RPM with your wheel diameter to check that the minimum speed isn't too fast.
+TT motors have different speed ranges depending on gear ratio. The common 50:1 ratio
+usually runs too fast for line following. Check the minimum RPM against your wheel
+diameter to confirm the slowest speed isn't too fast.
 
 ### Battery
 
-Motors have a high current draw, which can cause 'brownout'. This is when the microcontroller resets from low voltage level. You need to ensure you supply enough power to keep the microcontroller running. A 9V 'smoke detector' battery can't deliver enough power to run motors. I used a 4xAA battery holder with a switch. If you are using a reasonable battery and still getting brownouts, capacitors can help stabilise the surges from motor direction changes. Capacitors should be as larges as possible, ideally 100uF or larger, and should be placed in parallel with the battery and the microcontroller. The more, the better. If capacitors and a decent battery still isn't enough, you could use a dedicated small battery for digital and a dedicated large battery for the motors.
+Motors draw high current, which can trigger a 'brownout'. A brownout is a microcontroller reset from low voltage. A 9V "smoke detector" battery can't deliver enough power to run
+motors; I used a 4×AA holder with a switch. If brownouts persist on a decent battery,
+capacitors help absorb the surges from motor direction changes. Use the largest you
+can (100 µF or more) in parallel with the battery and the microcontroller - the more
+the better. If that still isn't enough, run a separate small battery for the digital
+electronics and a larger one for the motors.
 
 ### Connections
 
-Reliable electrical connections are critical to a functioning robot. Ideally, every connection is made with soldering or screw terminals, but this is difficult without manufacturing a PCB. Breadboards offer a reasonable level of reliability and compactness for prototyping. I use 22 AWG solid-core wire, with a wire stripper to make custom lengths to connect components on a breadboard. I soldered some multicore cabling to the motors, and used 0.2" screw terminals to connect the motor to the breadboard. I also used a dupont jumper wire kit to connect the ultrasonic and color sensors.
+Reliable connections are critical. Soldered joints or screw terminals are the most reliable; breadboards offer convenience, reasonable reliability and compactness for
+prototyping. I use 22 AWG solid-core wire cut to length on the breadboard, soldered multicore cable with 0.2" screw terminals to
+the motors, and DuPont jumpers for the
+ultrasonic and colour sensors.
 
-### Multidirectional Wheel
+### Multidirectional wheel
 
-In addition to two wheels, a third wheel contact point is needed. You can use a 'omniwheel', a caster wheel, or a caster ball. I used a caster ball. I tried a low-friction sliding 'foot', but it unfortunately hindered the robot turning. The chosen solution will need to be able to pass over debris and the bumps tile.
+Two driven wheels need a third contact point - an omniwheel, caster wheel, or caster
+ball. I used a caster ball. I tried a low-friction sliding "foot" but it hindered turning. Whatever
+you pick must clear debris and the bumpy tile.
 
 ### Sensor positioning
 
-The height and position relative to the wheels of the color sensors is really important. If the wheels are too far away from the sensors, the robot will not be able to adjust to sharp turns. If the sensors are too close together, the robot may not be able to keep the line between the sensors.
+The height and spacing of the colour sensors matters. Sensors too far ahead of the
+wheels can't react to sharp turns; sensors too close together can't keep the line
+between them.
 
 ### Slipping
 
-The weight distribution can also be important. If the robot is too front-heavy or back-heavy, it may roll over when finishing the seesaw. If there is not enough weight over the motor wheels, they may not have enough force to grip when going uphill. This is especially noticable when wheels pick up dust from the course. If this is a concern then the course and the wheels should be cleaned before starting.
+Weight distribution matters too. Too front- or back-heavy and the robot may roll over
+finishing the seesaw. Too little weight over the driven wheels and they lose grip
+uphill - especially as they pick up dust. Clean the course and wheels before starting.
