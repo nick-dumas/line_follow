@@ -1,91 +1,51 @@
-# line_follow_esp32
+# Robocup Rescue robot
 
 A two-sensor line-following robot for the ESP32, built with [PlatformIO](https://platformio.org/).
 
 ## Hardware
 
-| Component | Role |
-|-----------|------|
-| ESP32 DevKit (WROOM-32) | Controller (`esp32dev`) |
-| TB6612FNG | Dual DC motor driver |
-| TCA9548A | I²C multiplexer (lets two identical sensors share one bus) |
-| 2 × TCS34725 | RGB/clear color sensors (left & right) |
-| HC-SR04 | Ultrasonic distance sensor (pre-start telemetry) |
+- ESP32 DevKit (WROOM-32)
+- TB6612FNG Motor Driver
+- Breadboard
+- Hookup Wire
+- 2× TCS34725 RGB Sensor
+- 2× TT Motor (220:1) + Wheel
+- HC-SR04 Ultrasonic Distance Sensor
 
-### Pin map (TB6612FNG)
+## Tips
 
-| Signal | GPIO |
-|--------|------|
-| AIN1 / AIN2 / PWMA (left motor)  | 12 / 13 / 10 |
-| BIN1 / BIN2 / PWMB (right motor) | 9 / 8 / 11 |
+### Microcontroller
 
-`offsetA = -1`, `offsetB = 1` flip motor direction so positive speed drives the robot forward.
+Microcontrollers all have different capabilities. You want to check your chosen microcontroller has enough pins to support your requirements. In most microcontrollers, not all pins have the same capabilities. You'll need to check that you have enough regular GPIO pins, enough I2C pins, enough PWM pins, and enough analog input pins for your peripherals. Some pins will also be reused internally by the board for boot settings, buttons, leds, etc and should be avoided to maintain functionality. I used the ESP32 because it has lots of pins, multiple I2C buses, fits onto a breadboard, has wifi & bluetooth, has USBC, and is cheap.
 
-### Sensors
+### I2C
 
-Both TCS34725 sensors sit behind the TCA9548A at address `0x70`:
+I2C is a bus protocol that allows multiple devices and complex functionality to work with only an SDA pin, CLK pin, VCC and GND. However, most microcontrollers only support a single I2C bus with fixed pins. You can't connect multiple devices with the same address to the same bus. This usually causes problems with trying to connect multiple color sensors. Here's your options:
+- Sensors with configurable address (eg OPT4048)
+- I2C Multiplexer (eg TCA9548A)
+- Microcontroller with multiple I2C buses (eg ESP32)
+- Multiple microcontrollers ☹️
 
-- Left sensor  → mux channel **3**
-- Right sensor → mux channel **0**
+### Motor
 
-### HC-SR04 pin map
+TT motors have a different speed ranges depending on the gear ratio. The most common gear ratio is 50:1, which usually operates too fast for a line following robot. Use the minimum RPM with your wheel diameter to check that the minimum speed isn't too fast.
 
-| Signal | GPIO |
-|--------|------|
-| TRIG   | 2    |
-| ECHO   | 4    |
+### Battery
 
-Wire TRIG → GPIO 2, ECHO → GPIO 4, VCC → 5 V, GND → GND.
+Motors have a high current draw, which can cause 'brownout'. This is when the microcontroller resets from low voltage level. You need to ensure you supply enough power to keep the microcontroller running. A 9V 'smoke detector' battery can't deliver enough power to run motors. I used a 4xAA battery holder with a switch. If you are using a reasonable battery and still getting brownouts, capacitors can help stabilise the surges from motor direction changes. Capacitors should be as larges as possible, ideally 100uF or larger, and should be placed in parallel with the battery and the microcontroller. The more, the better. If capacitors and a decent battery still isn't enough, you could use a dedicated small battery for digital and a dedicated large battery for the motors.
 
-## How it works
+### Connections
 
-Each loop reads the *clear* channel of both sensors. A reading below
-`LINE_THRESHOLD` (1000) means that sensor is over the (dark) line.
+Reliable electrical connections are critical to a functioning robot. Ideally, every connection is made with soldering or screw terminals, but this is difficult without manufacturing a PCB. Breadboards offer a reasonable level of reliability and compactness for prototyping. I use 22 AWG solid-core wire, with a wire stripper to make custom lengths to connect components on a breadboard. I soldered some multicore cabling to the motors, and used 0.2" screw terminals to connect the motor to the breadboard. I also used a dupont jumper wire kit to connect the ultrasonic and color sensors.
 
-| Left on line | Right on line | Action |
-|:---:|:---:|---|
-| ✓ | ✓ | Drive straight (`BASE`, `BASE`) |
-| ✓ | ✗ | Pivot left (`-TURN`, `BASE`) |
-| ✗ | ✓ | Pivot right (`BASE`, `-TURN`) |
-| ✗ | ✗ | Drive straight (`BASE`, `BASE`) |
+### Multidirectional Wheel
 
-Tuning constants live at the top of [src/main.cpp](src/main.cpp): `LINE_THRESHOLD`,
-`BASE` (150), `TURN` (200), `loopDelayMs` (20).
+In addition to two wheels, a third wheel contact point is needed. You can use a 'omniwheel', a caster wheel, or a caster ball. I used a caster ball. I tried a low-friction sliding 'foot', but it unfortunately hindered the robot turning. The chosen solution will need to be able to pass over debris and the bumps tile.
 
-## Build & flash
+### Sensor positioning
 
-Requires the [PlatformIO Core](https://docs.platformio.org/en/latest/core/installation/) CLI
-or the PlatformIO VS Code extension.
+The height and position relative to the wheels of the color sensors is really important. If the wheels are too far away from the sensors, the robot will not be able to adjust to sharp turns. If the sensors are too close together, the robot may not be able to keep the line between the sensors.
 
-```sh
-pio run                # compile
-pio run --target upload # flash over USB
-pio device monitor     # serial console @ 115200
-```
+### Slipping
 
-On boot the monitor prints sensor init status. **Before the start button (GPIO 0) is pressed**,
-a status block prints once per second:
-
-```
-Left:
-R:  842 G:  901 B:  800 C:  900, !BLK, !GRN
-Right:
-R: 1400 G: 1500 B: 1300 C: 1503, !BLK, !GRN
-DIST: 23.4 cm
-```
-
-If the HC-SR04 echo times out (nothing in range / sensor absent) it prints `DIST: timeout`.
-
-After the button is pressed, per-loop telemetry resumes:
-
-```
-C1:842 C2:1503 L:1 R:0
-```
-
-## Notes
-
-- `analogWrite()` requires the **arduino-esp32 core 3.x**, which the current
-  `platform = espressif32` pulls in by default. If you pin an older platform
-  version, switch the PWM calls to the LEDC API.
-- The `Adafruit TCS34725` dependency is declared in [platformio.ini](platformio.ini);
-  PlatformIO resolves Adafruit BusIO and Adafruit Unified Sensor automatically.
+The weight distribution can also be important. If the robot is too front-heavy or back-heavy, it may roll over when finishing the seesaw. If there is not enough weight over the motor wheels, they may not have enough force to grip when going uphill. This is especially noticable when wheels pick up dust from the course. If this is a concern then the course and the wheels should be cleaned before starting.
