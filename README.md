@@ -1,4 +1,4 @@
-# RoboCup Rescue Robot
+﻿# RoboCup Rescue Robot
 
 A two-sensor line-following robot with an ESP32 for [RoboCup Rescue Australia Junior](https://www.robocupjunior.org.au/wp-content/uploads/2026/02/RCJA-Rescue-Line-Rules-2026.pdf). This is intended to guide learning, the functionality is intentionally incomplete.
 
@@ -20,6 +20,46 @@ A two-sensor line-following robot with an ESP32 for [RoboCup Rescue Australia Ju
 ![Underside of the robot showing motors, colour sensors, caster ball and battery](images/robot-underside.jpg)
 
 ![Front view of the robot showing the HC-SR04 ultrasonic sensor](images/ultrasonic-front.jpg)
+
+## Bill of Materials
+
+Indicative prices in AUD, ex-shipping, with the cheapest viable option chosen.
+The AU column links directly to Australian-supplier products (Core Electronics,
+Zaitronics, Jaycar); the "any supplier"
+column links to AliExpress/Amazon searches (individual listings expire too fast to
+link directly) and is cheaper but slower to ship.
+
+| Item                          | Qty | AU supplier (AUD) | Any supplier (AUD) |
+| ----------------------------- | --- | ----------------: | -----------------: |
+| ESP32 DevKit (WROOM-32)       | 1   | [$13](https://zaitronics.com.au/products/esp32-wifi-bluetooth-development-board) | [$6](https://www.aliexpress.com/wholesale?SearchText=ESP32+WROOM-32+devkit) |
+| TB6612FNG motor driver        | 1   | [$13](https://core-electronics.com.au/tb6612fng-dual-motor-driver-carrier.html) | [$2](https://www.aliexpress.com/wholesale?SearchText=TB6612FNG) |
+| TCS34725 RGB colour sensor    | 2   | [$13](https://core-electronics.com.au/rgb-colour-sensor-tcs34725.html) | [$7](https://www.aliexpress.com/wholesale?SearchText=TCS34725) |
+| TT motor + wheel              | 2   | [$16](https://core-electronics.com.au/dc-gearbox-motor-tt-motor-200rpm-3-to-6vdc.html) | [$5](https://www.aliexpress.com/wholesale?SearchText=TT+motor+gearbox+wheel) |
+| HC-SR04 ultrasonic sensor     | 1   | [$5](https://core-electronics.com.au/hc-sr04-ultrasonic-module-distance-measuring-sensor.html) | [$2](https://www.aliexpress.com/wholesale?SearchText=HC-SR04) |
+| Caster ball                   | 1   | [$3](https://core-electronics.com.au/pololu-ball-caster-with-3-8-plastic-ball.html) | [$1](https://www.aliexpress.com/wholesale?SearchText=ball+caster+robot) |
+| 4×AA battery holder w/ switch | 1   | [$3](https://core-electronics.com.au/4xaa-battery-holder-square-with-cover.html) | [$1](https://www.aliexpress.com/wholesale?SearchText=4xAA+battery+holder+switch) |
+| Breadboard + jumper wire      | 1   | [$10](https://core-electronics.com.au/jumper-wire-kit-for-solderless-breadboard-140-pcs.html) | [$4](https://www.aliexpress.com/wholesale?SearchText=breadboard+jumper+wire+kit) |
+| **Total**                     |     |           **~$76** |             **~$28** |
+
+Core stocks the TT motor at 1:48 (linked) and 1:90 rather than the 220:1 used here;
+a slower ratio tracks lines more easily, but check minimum RPM (see [Motors](#motors)).
+The ESP32 is the cheapest 38-pin board from Zaitronics (micro-USB) — match your USB cable to it.
+
+## Equipment
+
+Reusable tools that aren't consumed by a single build — buy once, share across robots.
+
+| Tool                                | Approx. (AUD) |
+| ----------------------------------- | ------------: |
+| [Low Cost Digital Multimeter (QM1500)](https://www.jaycar.com.au/low-cost-digital-multimeter-dmm/p/QM1500) | $15 |
+| [Duratech 48W Soldering Station (TS1620)](https://www.jaycar.com.au/duratech-48w-temperature-controlled-soldering-station/p/TS1620) | $60 |
+| [Wire Stripper / Cutter / Pliers (TH1841)](https://www.jaycar.com.au/stainless-steel-wire-stripper-cutter-pliers/p/TH1841) | $25 |
+| [DuPont jumper wires, M/F 40pc (CE09606)](https://core-electronics.com.au/male-to-female-dupont-line-40-pin-10cm-24awg.html) | $5 |
+| [22 AWG hookup wire spool set (ADA1311)](https://core-electronics.com.au/hook-up-wire-spool-set-22awg-solid-core-6-x-25-ft.html) | $30 |
+| [Third Hand PCB Holder (TH1982)](https://www.jaycar.com.au/third-hand-pcb-holder-tool-with-2-clips-and-heavy-base/p/TH1982) | $18 |
+| [10W Hot Glue Gun (TH2050)](https://www.jaycar.com.au/10w-hot-glue-gun-suits-7mm-glue-sticks/p/TH2050) | $10 |
+| [15 Piece Micro Driver Set (TD2069)](https://www.jaycar.com.au/15-piece-micro-driver-set/p/TD2069) | $15 |
+| [USB-A to Micro-B Cable 1.8m (WC7724)](https://www.jaycar.com.au/usb-a-to-usb-micro-b-cable-1-8m/p/WC7724) | $17 |
 
 ## Wiring
 
@@ -78,7 +118,7 @@ On startup, print sensor information until button pressed. Then, obot moves forw
 
 ### Complexity
 
-Reducing complexity means more reliable, cleaper, and less time wasted. I recommend avoid adding hardware that isn't needed, such as additional microcontrollers, batteries, or sensors. 
+Reducing complexity means more reliable, cleaper, and less time wasted. I recommend avoid adding hardware that isn't needed, such as additional microcontrollers, batteries, or sensors. The most important functionality is the line follow and shortcuts, these must be thoroughly tested for reliability because if you don't make it to the obstacles and oil spill, then you can't earn any points for them.
 
 ### Microcontroller
 
@@ -99,11 +139,16 @@ multiple colour sensors. Your options:
 - A microcontroller with multiple I2C buses (e.g. ESP32)
 - Multiple microcontrollers ☹️
 
+### Claw mechanism
+
+Lego can be attached to a any motor with bolts or super glue. For the claw mechanism, I would recommend a servo motor because they are small, powerful, and have inbuilt position knowledge.
+
 ### Motors
 
 TT motors have different speed ranges depending on gear ratio. The common 50:1 ratio
 usually runs too fast for line following. Check the minimum RPM against your wheel
 diameter to confirm the slowest speed isn't too fast.
+Metal gear motors are much better than plastic ones. You should ensure your motor comes with the right axle for your wheel, it is difficult to adapt the axles. Motor encoders provide much more precise control, but are more expensive. Also, externally fitted encoders are cumbersome.
 
 ### Battery
 
