@@ -24,6 +24,9 @@ struct ColorReading {
 MotorPins MOTOR_R = {25, 33, 32};
 MotorPins MOTOR_L = {26, 27, 14};
 
+#define HCSR04_TRIG 2
+#define HCSR04_ECHO 4
+
 #define CLR_L_SDA 18
 #define CLR_L_SCL 5
 
@@ -92,6 +95,18 @@ void debugColor(ColorReading cr) {
     isGreen(cr) ? " GRN" : "!GRN");
 }
 
+// Returns distance in cm, or -1 on timeout/no echo.
+float readDistanceCm() {
+  digitalWrite(HCSR04_TRIG, LOW);
+  delayMicroseconds(2);
+  digitalWrite(HCSR04_TRIG, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(HCSR04_TRIG, LOW);
+  unsigned long duration = pulseIn(HCSR04_ECHO, HIGH, 30000UL);  // 30 ms timeout (~5 m)
+  if (duration == 0) return -1.0f;
+  return duration * 0.01715f;  // µs * (0.0343 cm/µs / 2)
+}
+
 // Stop the motors and halt permanently.
 void haltForever(const char *reason) {
   stopMotors();
@@ -127,6 +142,10 @@ void setup() {
   pinMode(MOTOR_R.fwd, OUTPUT); pinMode(MOTOR_R.bwd, OUTPUT); pinMode(MOTOR_R.pwm, OUTPUT);
   stopMotors();
 
+  pinMode(HCSR04_TRIG, OUTPUT);
+  pinMode(HCSR04_ECHO, INPUT);
+  digitalWrite(HCSR04_TRIG, LOW);
+
   I2C_L.begin(CLR_L_SDA, CLR_L_SCL);
   I2C_R.begin(CLR_R_SDA, CLR_R_SCL);
   bool leftOk  = TCS_L.begin(TCS34725_ADDRESS, &I2C_L);
@@ -152,6 +171,12 @@ void setup() {
       debugColor(l_color);
       Serial.println("Right:");
       debugColor(r_color);
+      float dist = readDistanceCm();
+      if (dist < 0) {
+        Serial.println("DIST: timeout");
+      } else {
+        Serial.printf("DIST: %.1f cm\n", dist);
+      }
     }
   }
   Serial.println("Starting!");
