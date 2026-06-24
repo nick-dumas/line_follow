@@ -2,6 +2,10 @@
 
 A two-sensor line-following robot with an ESP32 for [RoboCup Rescue Australia Junior](https://www.robocupjunior.org.au/wp-content/uploads/2026/02/RCJA-Rescue-Line-Rules-2026.pdf). This is intended to guide learning, the functionality is intentionally incomplete.
 
+![The assembled robot, top view](images/robot-top.jpg)
+
+![The assembled robot, side view](images/robot-side.jpg)
+
 ## Hardware
 
 - ESP32 DevKit (WROOM-32)
@@ -13,6 +17,10 @@ A two-sensor line-following robot with an ESP32 for [RoboCup Rescue Australia Ju
 - 4×AA battery holder with switch
 - Breadboard and 22 AWG hookup wire
 
+![Underside of the robot showing motors, colour sensors, caster ball and battery](images/robot-underside.jpg)
+
+![Front view of the robot showing the HC-SR04 ultrasonic sensor](images/ultrasonic-front.jpg)
+
 ## Wiring
 
 | Peripheral            | ESP32 pins                          |
@@ -23,6 +31,11 @@ A two-sensor line-following robot with an ESP32 for [RoboCup Rescue Australia Ju
 | Right colour sensor   | I2C bus 1 - SDA 17, SCL 16         |
 | Ultrasonic (HC-SR04)  | TRIG 2, ECHO 4                      |
 | Start button          | GPIO 0 (on-board BOOT button)      |
+
+The two colour sensors share the same I2C address, so each sits on a separate ESP32
+hardware I2C bus (see [I2C](#i2c) below).
+
+![Breadboard wiring detail](images/wiring-detail.jpg)
 
 ## Getting Started
 
