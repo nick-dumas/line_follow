@@ -76,6 +76,10 @@ On startup, print sensor information until button pressed. Then, obot moves forw
 
 ## Tips
 
+### Complexity
+
+Reducing complexity means more reliable, cleaper, and less time wasted. I recommend avoid adding hardware that isn't needed, such as additional microcontrollers, batteries, or sensors. 
+
 ### Microcontroller
 
 Microcontrollers differ in their capabilities, so check that your chosen board has
