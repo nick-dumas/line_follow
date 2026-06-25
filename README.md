@@ -23,12 +23,6 @@ A two-sensor line-following robot with an ESP32 for [RoboCup Rescue Australia Ju
 
 ## Bill of Materials
 
-Indicative prices in AUD, ex-shipping, with the cheapest viable option chosen.
-The AU column links directly to Australian-supplier products (Core Electronics,
-Zaitronics, Jaycar); the "any supplier"
-column links to AliExpress/Amazon searches (individual listings expire too fast to
-link directly) and is cheaper but slower to ship.
-
 | Item                          | Qty | AU supplier (AUD) | Any supplier (AUD) |
 | ----------------------------- | --- | ----------------: | -----------------: |
 | ESP32 DevKit (WROOM-32)       | 1   | [$13](https://zaitronics.com.au/products/esp32-wifi-bluetooth-development-board) | [$6](https://www.aliexpress.com/wholesale?SearchText=ESP32+WROOM-32+devkit) |
@@ -38,16 +32,11 @@ link directly) and is cheaper but slower to ship.
 | HC-SR04 ultrasonic sensor     | 1   | [$5](https://core-electronics.com.au/hc-sr04-ultrasonic-module-distance-measuring-sensor.html) | [$2](https://www.aliexpress.com/wholesale?SearchText=HC-SR04) |
 | Caster ball                   | 1   | [$3](https://core-electronics.com.au/pololu-ball-caster-with-3-8-plastic-ball.html) | [$1](https://www.aliexpress.com/wholesale?SearchText=ball+caster+robot) |
 | 4×AA battery holder w/ switch | 1   | [$3](https://core-electronics.com.au/4xaa-battery-holder-square-with-cover.html) | [$1](https://www.aliexpress.com/wholesale?SearchText=4xAA+battery+holder+switch) |
-| Breadboard + jumper wire      | 1   | [$10](https://core-electronics.com.au/jumper-wire-kit-for-solderless-breadboard-140-pcs.html) | [$4](https://www.aliexpress.com/wholesale?SearchText=breadboard+jumper+wire+kit) |
-| **Total**                     |     |           **~$76** |             **~$28** |
+| Breadboard jumper wire      | 1   | [$10](https://core-electronics.com.au/jumper-wire-kit-for-solderless-breadboard-140-pcs.html) | [$4](https://www.aliexpress.com/wholesale?SearchText=breadboard+jumper+wire+kit) |
+| Breadboard     | 1   | [$4](https://core-electronics.com.au/transparent-solderless-breadboard-830-tie-point-zyj-102.html) | [$2](https://www.aliexpress.com/wholesale?SearchText=breadboard) |
+| **Total**                     |     |           **~$80** |             **~$30** |
 
-Core stocks the TT motor at 1:48 (linked) and 1:90 rather than the 220:1 used here;
-a slower ratio tracks lines more easily, but check minimum RPM (see [Motors](#motors)).
-The ESP32 is the cheapest 38-pin board from Zaitronics (micro-USB) — match your USB cable to it.
-
-## Equipment
-
-Reusable tools that aren't consumed by a single build — buy once, share across robots.
+## Recommended Equipment
 
 | Tool                                | Approx. (AUD) |
 | ----------------------------------- | ------------: |
@@ -56,10 +45,7 @@ Reusable tools that aren't consumed by a single build — buy once, share across
 | [Wire Stripper / Cutter / Pliers (TH1841)](https://www.jaycar.com.au/stainless-steel-wire-stripper-cutter-pliers/p/TH1841) | $25 |
 | [DuPont jumper wires, M/F 40pc (CE09606)](https://core-electronics.com.au/male-to-female-dupont-line-40-pin-10cm-24awg.html) | $5 |
 | [22 AWG hookup wire spool set (ADA1311)](https://core-electronics.com.au/hook-up-wire-spool-set-22awg-solid-core-6-x-25-ft.html) | $30 |
-| [Third Hand PCB Holder (TH1982)](https://www.jaycar.com.au/third-hand-pcb-holder-tool-with-2-clips-and-heavy-base/p/TH1982) | $18 |
 | [10W Hot Glue Gun (TH2050)](https://www.jaycar.com.au/10w-hot-glue-gun-suits-7mm-glue-sticks/p/TH2050) | $10 |
-| [15 Piece Micro Driver Set (TD2069)](https://www.jaycar.com.au/15-piece-micro-driver-set/p/TD2069) | $15 |
-| [USB-A to Micro-B Cable 1.8m (WC7724)](https://www.jaycar.com.au/usb-a-to-usb-micro-b-cable-1-8m/p/WC7724) | $17 |
 
 ## Wiring
 
@@ -71,11 +57,6 @@ Reusable tools that aren't consumed by a single build — buy once, share across
 | Right colour sensor   | I2C bus 1 - SDA 17, SCL 16         |
 | Ultrasonic (HC-SR04)  | TRIG 2, ECHO 4                      |
 | Start button          | GPIO 0 (on-board BOOT button)      |
-
-The two colour sensors share the same I2C address, so each sits on a separate ESP32
-hardware I2C bus (see [I2C](#i2c) below).
-
-![Breadboard wiring detail](images/wiring-detail.jpg)
 
 ## Getting Started
 
@@ -184,6 +165,10 @@ between them. The sensor ahould be about 0.5 cm above the ground for best color 
 Weight distribution matters too. Too front- or back-heavy and the robot may roll over
 finishing the seesaw. Too little weight over the driven wheels and they lose grip
 uphill - especially as they pick up dust. Clean the course and wheels before starting.
+
+### Speed
+
+The most important thing is reliability, but being faster means you have time to retry. If your main loop runs faster, you can check the sensors more often which allows you to move faster without losing the line. Keeping color sensor integration time low and only reading once per loop helps run faster.
 
 ## Final
 
