@@ -184,3 +184,7 @@ between them. The sensor ahould be about 0.5 cm above the ground for best color 
 Weight distribution matters too. Too front- or back-heavy and the robot may roll over
 finishing the seesaw. Too little weight over the driven wheels and they lose grip
 uphill - especially as they pick up dust. Clean the course and wheels before starting.
+
+## Final
+
+Good luck with robocup! If you made an avoidable mistake, create an issue and I'll add a tip to help prevent others making the same mistake.
