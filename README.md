@@ -137,6 +137,7 @@ multiple colour sensors. Your options:
 - Sensors with a configurable address (e.g. OPT4048)
 - An I2C multiplexer (e.g. TCA9548A)
 - A microcontroller with multiple I2C buses (e.g. ESP32)
+- "Bit-banging"
 - Multiple microcontrollers ☹️
 
 ### Claw mechanism
@@ -176,7 +177,7 @@ you pick must clear debris and the bumpy tile.
 
 The height and spacing of the colour sensors matters. Sensors too far ahead of the
 wheels can't react to sharp turns; sensors too close together can't keep the line
-between them.
+between them. The sensor ahould be about 0.5 cm above the ground for best color detection.
 
 ### Slipping
 
