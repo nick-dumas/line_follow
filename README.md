@@ -40,12 +40,11 @@ A two-sensor line-following robot with an ESP32 for [RoboCup Rescue Australia Ju
 
 | Tool                                | Approx. (AUD) |
 | ----------------------------------- | ------------: |
-| [Low Cost Digital Multimeter (QM1500)](https://www.jaycar.com.au/low-cost-digital-multimeter-dmm/p/QM1500) | $15 |
-| [Duratech 48W Soldering Station (TS1620)](https://www.jaycar.com.au/duratech-48w-temperature-controlled-soldering-station/p/TS1620) | $60 |
-| [Wire Stripper / Cutter / Pliers (TH1841)](https://www.jaycar.com.au/stainless-steel-wire-stripper-cutter-pliers/p/TH1841) | $25 |
-| [DuPont jumper wires, M/F 40pc (CE09606)](https://core-electronics.com.au/male-to-female-dupont-line-40-pin-10cm-24awg.html) | $5 |
-| [22 AWG hookup wire spool set (ADA1311)](https://core-electronics.com.au/hook-up-wire-spool-set-22awg-solid-core-6-x-25-ft.html) | $30 |
-| [10W Hot Glue Gun (TH2050)](https://www.jaycar.com.au/10w-hot-glue-gun-suits-7mm-glue-sticks/p/TH2050) | $10 |
+| Digital Multimeter | $15 |
+| Soldering Station | $60 |
+| Wire Stripper / Cutter / Pliers | $25 |
+| DuPont jumper wires | $5 |
+| 22 AWG solid core hookup wire set | $30 |
 
 ## Wiring
 
