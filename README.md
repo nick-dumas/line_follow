@@ -92,7 +92,7 @@ I used visual studio code with PlatformIO, but the code can also run with the Ar
 
 ## Behaviour
 
-On startup, print sensor information until button pressed. Then, obot moves forward until one sensor sees black. The robot will turns towards the black to keep straddling the line. When green shortcut is detected, it will make a turn in that direction. If both sensors see green, it will halt.
+On startup, print sensor information until button pressed. Then,r obot moves forward until one sensor sees black. The robot will turns towards the black to keep straddling the line. When green shortcut is detected, it will make a turn in that direction. If both sensors see green, it will halt.
 
 ## Tips
 
