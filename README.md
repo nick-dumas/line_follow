@@ -6,6 +6,10 @@ A two-sensor line-following robot with an ESP32 for [RoboCup Rescue Australia Ju
 
 ![The assembled robot, side view](images/robot-side.jpg)
 
+## ⚠️ WARNING
+
+The ESP32 boards do NOT come with a protective diode, so if you plug in a USB cable and an external power source, you may backfeed the USB port and destroy the port on your computer.
+
 ## Hardware
 
 - ESP32 DevKit (WROOM-32)
